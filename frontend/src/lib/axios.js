@@ -1,8 +1,10 @@
 import axios from "axios";
+console.log(import.meta.env.NODE)
 
-export const BASE_URL = import.meta.env.NODE === "development" ? "http://localhost:5001" : "/api"
+const LocalURLArr = ["development", undefined, "undefined"]
+export const BASE_URL = LocalURLArr.includes(import.meta.env.NODE) ? "http://localhost:5001" : "/api"
 
 export const axiosInstance = axios.create({
-    baseURL: import.meta.env.NODE === "development" ? `${BASE_URL}/api` : BASE_URL,
+    baseURL: LocalURLArr.includes(import.meta.env.NODE) ? `${BASE_URL}/api` : BASE_URL,
     withCredentials: true,
 })
