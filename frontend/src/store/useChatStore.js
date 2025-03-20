@@ -9,6 +9,9 @@ export const useChatStore = create((set, get) => ({
     selectedUser: null,
     isUsersLoading: false,
     isMessagesLoading: false,
+    isAddedNewUser: false,
+    addUser: false,
+    isDeleteUser: false,
 
     getUsers: async () => {
         try {
@@ -44,6 +47,33 @@ export const useChatStore = create((set, get) => ({
         }
     },
 
+    addNewUsers: async (data) => {
+        try {
+            set({ isAddedNewUser: true })
+            const res = await axiosInstance.post("/messages/add-friend", data);
+            toast.success(res.data.message)
+            get().getUsers();
+        } catch (error) {
+            toast.error(error.response.data.message)
+        } finally {
+            set({ isAddedNewUser: false })
+        }
+    },
+
+    removeUsers: async (data) => {
+        try {
+            set({ isDeleteUser: true })
+            const res = await axiosInstance.delete(`/messages/delete-friend/${data?.Friends_array?._id}`, { data })
+            toast.success(res?.data?.message)
+            get().getUsers()
+            set({ selectedUser: null })
+        } catch (error) {
+            toast.error(error.response.data.message)
+        } finally {
+            set({ isDeleteUser: false })
+        }
+    },
+
     // todo: optimize this one later
     setSelectedUser: (selectedUser) => set({ selectedUser }),
 
@@ -53,7 +83,7 @@ export const useChatStore = create((set, get) => ({
 
         const socket = useAuthStore.getState().socket
         socket.on("newMessage", (newMessage) => {
-            if(newMessage.senderId !== selectedUser?._id) return;
+            if (newMessage.senderId !== selectedUser?._id) return;
             set({
                 messages: [...get().messages, newMessage]
             })
