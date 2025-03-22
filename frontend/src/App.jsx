@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import Navbar from './components/Navbar'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import SingUpPage from './pages/SingUpPage'
@@ -15,10 +15,28 @@ import ForgetPasswordPage from './pages/ForgetPasswordPage.jsx'
 const App = () => {
   const { authUser, checkAuth, isCheckingAuth, onlineUsers } = useAuthStore();
   const { theme } = useThemeStore();
-  
+
+  const [isOnline, setIsOnline] = useState(typeof window != "undefined" ? window.navigator.onLine : false);
+
+  useEffect(() => {
+    const handleFunction = () => {
+      if (window.navigator.onLine === true) {
+        setIsOnline("online")
+      } else if (window.navigator.onLine === false) {
+        setIsOnline("offline")
+      } else {
+        setIsOnline(false)
+      }
+    };
+    handleFunction();
+    setTimeout(() => {
+      setIsOnline(false)
+    }, 3000);
+  }, [isOnline])
+
   useEffect(() => {
     checkAuth()
-  }, [checkAuth])
+  }, [checkAuth]);
 
   if (isCheckingAuth && !authUser) {
     return (
@@ -38,7 +56,11 @@ const App = () => {
         <Route path='/settings' element={<SettingPage />} />
         <Route path='/profile' element={authUser ? <ProfilePage /> : <Navigate to={'/login'} />} />
       </Routes>
-
+      {["online", "offline"]?.includes(isOnline) ?
+        <div className={`fixed bottom-0 left-0 w-full text-sm text-center ${isOnline == "online" ? "bg-green-500" : isOnline == "offline" ? "bg-zinc-400" : ""} text-white`}>
+          {isOnline == "online" ? "Online" : isOnline == "offline" ? "Offline" : ""}
+        </div>
+        : ""}
       <Toaster />
     </div>
   )
