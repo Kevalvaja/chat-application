@@ -1,9 +1,10 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useAuthStore } from '../store/useAuthStore';
 import toast from 'react-hot-toast';
 import { Eye, EyeOff, Loader2, Lock, Mail, MessageSquare, User } from 'lucide-react';
 import AuthImagePattern from '../components/AuthImagePattern';
 import { Link } from 'react-router-dom';
+import { usePasswordStore } from '../store/useForgetPasswordStore';
 
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -13,6 +14,12 @@ const LoginPage = () => {
   })
 
   const { login, isLoggingIng } = useAuthStore();
+
+  const { defaultPasswordSelection } = usePasswordStore();
+
+  useEffect(() => {
+    defaultPasswordSelection()
+  }, [defaultPasswordSelection])
 
   const validateForm = () => {
     if (!formData?.email?.trim()) return toast.error("Email is required");
@@ -89,6 +96,13 @@ const LoginPage = () => {
                     <EyeOff className='size-5 text-base-content/40' />
                     : <Eye className='size-5 text-base-content/40' />}
                 </button>
+              </div>
+              <div className='text-sm text-right'>
+                <p className='text-base-content/60'>
+                  <Link to="/forget-password" className='link link-primary'>
+                    Forget Password?
+                  </Link>
+                </p>
               </div>
             </div>
 

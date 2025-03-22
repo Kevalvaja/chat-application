@@ -15,6 +15,11 @@ const userSchema = new mongoose.Schema({
         required: true,
         minlength: 6
     },
+    otp: {
+        type: Number,
+        minlength: 4,
+        default: null
+    },
     profilePic: {
         type: String,
     },

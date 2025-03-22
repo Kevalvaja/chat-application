@@ -3,6 +3,7 @@ import { useAuthStore } from '../store/useAuthStore';
 import { Eye, EyeOff, Loader2, Lock, Mail, MessageSquare, User } from 'lucide-react';
 import AuthImagePattern from '../components/AuthImagePattern';
 import toast from 'react-hot-toast';
+import { Link } from 'react-router-dom';
 
 const SingUpPage = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -22,11 +23,11 @@ const SingUpPage = () => {
 
     return true;
   }
-  
+
   const handleSubmit = (e) => {
     e.preventDefault()
     const success = validateForm()
-    if(success === true) {
+    if (success === true) {
       signup(formData)
     }
   }
@@ -122,6 +123,15 @@ const SingUpPage = () => {
             </button>
 
           </form>
+          
+          <div className='text-center'>
+            <p className='text-base-content/60'>
+              Do you have an account?{" "}
+              <Link to="/login" className='link link-primary'>
+                Login
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
       <AuthImagePattern

@@ -1,4 +1,6 @@
 import cloudinary from "../lib/cloudinary.js"
+import { ForgetPasswordMessage, WelcomeMessage } from "../lib/mail-message.js"
+import { MailNotification } from "../lib/mailNotification.js"
 import { generateJwtToken } from "../lib/utils.js"
 import User from "../models/user.model.js"
 import bcrypt from "bcryptjs"
@@ -36,12 +38,21 @@ export const signup = async (req, res) => {
             generateJwtToken(newUser._id, res);
             await newUser.save();
 
-            res.status(201).json({
-                _id: newUser._id,
-                fullName: newUser.fullName,
-                email: newUser.email,
-                profilePic: "",
-            })
+            const message = WelcomeMessage(newUser.fullName, newUser.email);
+
+            MailNotification(newUser.email, "Create Account", message).then((sendMessageId) => {
+                res.status(201).json({
+                    _id: newUser._id,
+                    fullName: newUser.fullName,
+                    email: newUser.email,
+                    profilePic: "",
+                    sendMailId: sendMessageId,
+                })
+            }).catch((error) => {
+                console.log("Error in node mailer", error.message)
+                return res?.status(500).json({ message: "Internal Server Error" })
+            });
+
         } else {
             return res?.status(400).json({ message: "Invalid user data" })
         }
@@ -110,6 +121,57 @@ export const checkAuth = (req, res) => {
         res.status(200).json(req?.user);
     } catch (error) {
         console.log("Error in logout controller", error.message)
+        return res?.status(500).json({ message: "Internal Server Error" })
+    }
+}
+
+export const sendOTP = async (req, res) => {
+    try {
+        const emailVerification = await User.findOne({ email: req?.body?.email }).select("-password, -otp");
+
+        if (!emailVerification) {
+            return res?.status(404).json({ message: "Email is not found" })
+        }
+
+        const { message, number } = ForgetPasswordMessage();
+
+        await User.findOneAndUpdate({ email: req?.body?.email }, { $set: { otp: number } })
+
+        MailNotification(emailVerification?.email, "Forget Password", message).then((sendMessageId) => {
+            res.status(200).json({ message: "Mail send successfully...", sendMailId: sendMessageId })
+        }).catch((error) => {
+            console.log("Error in node mailer", error.message)
+            return res?.status(500).json({ message: "Internal Server Error" })
+        });
+
+    } catch (error) {
+        console.log("Error in sendOTP controller", error.message)
+        return res?.status(500).json({ message: "Internal Server Error" })
+    }
+}
+
+export const verifyOTP = async (req, res) => {
+    try {
+        const findUser = await User.findOne({ otp: req?.body?.otp }).select("-password, -otp");
+        if (!findUser) return res?.status(400).json({ message: "Invalid OTP" });
+        res.status(200).json({ message: "Verify your OTP successfully...", data: findUser })
+    } catch (error) {
+        console.log("Error in verifyOTP controller", error.message)
+        return res?.status(500).json({ message: "Internal Server Error" })
+    }
+}
+
+export const UpdatePassword = async (req, res) => {
+    try {
+        if (!req?.params?.id) return res?.status(400).json({ message: "Parameter is missing" });
+        if (!req?.body?.password) return res?.status(400).json({ message: "Password is required" });
+        // hash password
+        const slat = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(req?.body?.password, slat);
+        const updatePassword = await User.findOneAndUpdate({ _id: req?.params?.id }, { $set: { password: hashedPassword, otp: null } })
+        res.status(200).json({ message: "Update your password successfully...", data: updatePassword })
+    } catch (error) {
+        console.log("Error in UpdatePassword controller", error.message)
         return res?.status(500).json({ message: "Internal Server Error" })
     }
 }

@@ -4,6 +4,8 @@ import friendModel from "../models/friends.model.js";
 import cloudinary from "../lib/cloudinary.js";
 import { getReceiverSocketId, io } from "../lib/socket.js";
 import mongoose from "mongoose";
+import { MailNotification } from "../lib/mailNotification.js";
+import { FriendRequestMessage } from "../lib/mail-message.js";
 
 export const getUsersForSidebar = async (req, res) => {
     try {
@@ -88,7 +90,15 @@ export const createFriends = async (req, res) => {
 
         if (newFriends) {
             await newFriends.save()
-            return res?.status(201).json({ message: "New friend added successfully...", data: newFriends })
+
+            const message = FriendRequestMessage(req?.user?.fullName, req?.user?.email);
+
+            MailNotification(req?.user?.email, "Accept Friend Request", message).then((sendMessageId) => {
+                return res?.status(201).json({ message: "New friend added successfully...", data: newFriends, sendMailId: sendMessageId })
+            }).catch((error) => {
+                console.log("Error in node mailer", error.message)
+                return res?.status(500).json({ message: "Internal Server Error" })
+            });
         }
     } catch (error) {
         console.log("Error in createFriends controller", error.message)
